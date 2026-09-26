@@ -2,9 +2,11 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageDraw, ImageTk
 import math
+import re
 
 
-canvas_img = None            
+canvas_img = None       
+svg_segments = []       
 
 BG_COLOR = (255, 255, 255)
 LINE_COLOR = (0, 0, 0)
@@ -206,6 +208,40 @@ def save_pbm():
             f.write(" ".join(row) + "\n")
 
 
+def load_svg():
+    global svg_segments
+    path = filedialog.askopenfilename(filetypes=[("SVG files", "*.svg")])
+    if not path:
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    segments = []
+    for m in re.finditer(
+        r'<line[^>]*x1="([\d.\-]+)"[^>]*y1="([\d.\-]+)"[^>]*x2="([\d.\-]+)"[^>]*y2="([\d.\-]+)"',
+        content
+    ):
+        x1, y1, x2, y2 = map(float, m.groups())
+        segments.append((x1, y1, x2, y2))
+
+    svg_segments = segments
+    if segments:
+        svg_status_label.configure(text=f"SVG загружен ({len(segments)} отрезков)", fg="green")
+    else:
+        svg_status_label.configure(text="Отрезки не найдены", fg="red")
+
+
+def draw_svg():
+    if canvas_img is None or not svg_segments:
+        return
+    clear_canvas()
+    for x1, y1, x2, y2 in svg_segments:
+        builtin_line(canvas_img, x1, y1, x2, y2)
+    update_preview()
+
+
+
+
 root = tk.Tk()
 root.title("Лабораторная работа №3 — Растеризация отрезков (пентаграмма)")
 root.geometry("1300x800")
@@ -229,6 +265,16 @@ canvas_h_entry.insert(0, "600")
 canvas_h_entry.grid(row=0, column=3, padx=5)
 
 tk.Button(canvas_group, text="Создать холст", command=create_canvas).grid(row=0, column=4, padx=10)
+
+
+
+svg_group = tk.LabelFrame(top_frame, text="Загрузка SVG", padx=10, pady=10)
+svg_group.pack(side=tk.LEFT, padx=5, fill=tk.Y)
+
+svg_status_label = tk.Label(svg_group, text="SVG не загружен", fg="red")
+
+tk.Button(svg_group, text="Загрузить SVG", command=load_svg).pack(side=tk.LEFT)
+svg_status_label.pack(side=tk.LEFT, padx=10)
 
 
 
@@ -263,6 +309,7 @@ control_group.pack(side=tk.TOP, fill=tk.X, padx=10)
 tk.Button(control_group, text="Сохранить BMP", command=save_bmp, width=20).pack(side=tk.LEFT, padx=5)
 tk.Button(control_group, text="Сохранить PBM", command=save_pbm, width=20).pack(side=tk.LEFT, padx=5)
 tk.Button(control_group, text="Очистить холст", command=clear_canvas, width=20).pack(side=tk.LEFT, padx=5)
+tk.Button(control_group, text="Нарисовать SVG", command=draw_svg, width=20).pack(side=tk.LEFT, padx=5)
 
 preview_label = tk.Label(root, bg="gray")
 preview_label.pack(pady=10)
