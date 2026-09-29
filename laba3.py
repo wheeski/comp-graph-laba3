@@ -240,12 +240,13 @@ def draw_svg():
     update_preview()
 
 
-
-
 root = tk.Tk()
 root.title("Лабораторная работа №3 — Растеризация отрезков (пентаграмма)")
 root.geometry("1300x800")
-root.state('zoomed')
+try:
+    root.state('zoomed')
+except tk.TclError:
+    pass
 
 top_frame = tk.Frame(root)
 top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -288,7 +289,7 @@ radius_entry.grid(row=0, column=1, padx=5)
 
 tk.Label(shape_group, text="Угол вершины (°):").grid(row=0, column=2, sticky="e")
 angle_entry = tk.Entry(shape_group, width=8)
-angle_entry.insert(0, "90")
+angle_entry.insert(0, "270")
 angle_entry.grid(row=0, column=3, padx=5)
 
 
